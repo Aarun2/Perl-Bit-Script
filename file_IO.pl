@@ -3,59 +3,124 @@ use 5.18.0;
 use warnings;
 use strict;
 
-my $filename = 'test_file.txt';
+# A method that helps generate random values for given lines and numbers per line
+sub rand_bin_file {
+    my $input = shift;
+    my $num_lines = shift;
+    my $num_per_line = shift;
 
-# generate random values as input for file
+    open(my $fh, '>', $input) or die "Cannot Open Input File: $!";
 
-open(my $fh, '>', $filename) or die "Cannot Open File: $!";
-
-for (1..100) {
-    for my $j (1..8) {
-        my $str = '';
-        for (1..4) {
-            $str = $str . int(rand(2));
+    for (1..$num_lines) {
+        for my $j (1..$num_per_line) {
+            my $str = '';
+            for (1..4) {
+                $str = $str . int(rand(2));
+            }
+            if ($j < $num_per_line) {
+                $str = $str. ' ';
+            }
+            else {
+                $str = $str. qq(\n);
+            }
+            print $fh $str;
         }
-        if ($j < 8) {
-            $str = $str. ' ';
-        }
-        else {
-            $str = $str. qq(\n);
-        }
-        print $fh $str;
     }
+    close($fh);
 }
 
-close($fh);
+# A method that helps covert a binary input file to decimal
+# adds leading zeroes to output for consistency
+sub bin_file_to_dec_file {
+    my $input = shift;
+    my $output = shift;
 
-# read the random values and output decimal values to new file
+    open(my $fh, '<', $input) or die "Cannot Open Input File: $!";
+    open(my $fh2, '>', $output) or die "Cannot Open Output File: $!";
 
-my $out_file = 'out.txt';
-my $out_file2 = 'out2.txt';
-
-open(my $fh2, '<', $filename) or die "Cannot Open File: $!";
-open(my $fh3, '>', $out_file) or die "Cannot Open File: $!";
-open(my $fh4, '>', $out_file2) or die "Cannot Open File: $!";
-
-while (my $line = <$fh2>) {
-    my @array = split /\s/, $line; # split on all whitespace, thats the reg expr for that
-    for my $i (0..$#array) {
-        my $x_num = oct("0b" . $array[$i]);
-        print $fh4 "0x";
-        print $fh4 sprintf('%X', $x_num);
-        if ($x_num <= 9) {
-            print $fh3 "0";
+    while (my $line = <$fh>) {
+        my @array = split /\s/, $line; # split on all whitespace, thats the reg expr for that
+        for my $i (0..$#array) {
+            my $x_num = oct("0b" . $array[$i]);
+            if ($x_num <= 9) {
+                print $fh2 "0";
+            }
+            print $fh2 $x_num;
+            if ($i == $#array) {
+                print $fh2 "\n";
+            } else {
+                print $fh2 " ";
+            } 
         }
-        print $fh3 $x_num;
-        if ($i == $#array) {
-            print $fh3 "\n";
-            print $fh4 "\n";
-        } else {
-            print $fh3 " ";
-            print $fh4 " ";
-        } 
-    }
+    }   
+
+    close($fh2);
+    close($fh);
 }
 
-close($fh2);
-close($fh3);
-close($fh4);
+# A method that helps covert a binary input file to hexadecimal values
+sub bin_file_to_hex_file {
+    my $input = shift;
+    my $output = shift;
+
+    open(my $fh, '<', $input) or die "Cannot Open Input File: $!";
+    open(my $fh2, '>', $output) or die "Cannot Open Output File: $!";
+
+    while (my $line = <$fh>) {
+        my @array = split /\s/, $line; # split on all whitespace, thats the reg expr for that
+        for my $i (0..$#array) {
+            my $x_num = oct("0b" . $array[$i]);
+            print $fh2 "0x";
+            print $fh2 sprintf('%X', $x_num);
+            if ($i == $#array) {
+                print $fh2 "\n";
+            } else {
+                print $fh2 " ";
+            }
+        }
+    }   
+
+    close($fh2);
+    close($fh);
+}
+
+# A method that combines the above functions and writes to both files at the same time
+# better complexity
+sub bin_file_to_dec_hex_file {
+    my $input = shift;
+    my $output_dec = shift;
+    my $output_hex = shift;
+
+    open(my $fh, '<', $input) or die "Cannot Open Input File: $!";
+    open(my $fh2, '>', $output_dec) or die "Cannot Open Output decimal File: $!";
+    open(my $fh3, '>', $output_hex) or die "Cannot Open Output hex File: $!";
+
+    while (my $line = <$fh>) {
+        my @array = split /\s/, $line; # split on all whitespace, thats the reg expr for that
+        for my $i (0..$#array) {
+            my $x_num = oct("0b" . $array[$i]);
+            print $fh3 "0x";
+            print $fh3 sprintf('%X', $x_num);
+            if ($x_num <= 9) {
+                print $fh2 "0";
+            }
+            print $fh2 $x_num;
+            if ($i == $#array) {
+                print $fh2 "\n";
+                print $fh3 "\n";
+            } else {
+                print $fh2 " ";
+                print $fh3 " ";
+            } 
+        }
+    }
+
+    close($fh3);
+    close($fh2);
+    close($fh);
+}
+
+rand_bin_file("test_file.txt", 100, 8);
+bin_file_to_dec_file("test_file.txt", "out_dec.txt");
+bin_file_to_hex_file("test_file.txt", "out_hex.txt");
+bin_file_to_dec_hex_file("test_file.txt", "out_dec2.txt", "out_hex2.txt"); # better runtime
